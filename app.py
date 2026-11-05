@@ -105,7 +105,9 @@ div.stButton > button, div[data-testid="stFormSubmitButton"] > button { border-r
 .block-container [data-testid="stExpander"] [data-testid="stWidgetLabel"] label { color:#fff !important; }
 .block-container [data-testid="stExpander"] input { background:#2b2b33 !important; color:#fff !important; }
 /* Tab Tambah Arsip dan Daftar Arsip: hitam penuh */
-.st-key-arsip_box [data-baseweb="tab-panel"] { background:#1a1a1f; border-radius:14px; padding:20px 22px; margin-top:10px; }
+.st-key-arsip_box { background:#1a1a1f !important; border-radius:14px; padding:20px 22px; }
+.st-key-arsip_box [data-baseweb="tab-panel"] { background:transparent !important; padding-top:14px; }
+.st-key-arsip_box [data-testid="stMultiSelect"] div[data-baseweb="select"] > div { background:#2b2b33 !important; }
 .st-key-arsip_box [data-testid="stWidgetLabel"] p,
 .st-key-arsip_box [data-testid="stWidgetLabel"] label { color:#fff !important; }
 .st-key-arsip_box [data-testid="stForm"] { border:0 !important; padding:0; }
