@@ -105,15 +105,15 @@ div.stButton > button, div[data-testid="stFormSubmitButton"] > button { border-r
 .block-container [data-testid="stExpander"] [data-testid="stWidgetLabel"] label { color:#fff !important; }
 .block-container [data-testid="stExpander"] input { background:#2b2b33 !important; color:#fff !important; }
 /* Tab Tambah Arsip dan Daftar Arsip: hitam penuh */
-.st-key-arsip_box { background:#1a1a1f !important; border-radius:14px; padding:20px 22px; }
-.st-key-arsip_box [data-baseweb="tab-panel"] { background:transparent !important; padding-top:14px; }
-.st-key-arsip_box [data-testid="stMultiSelect"] div[data-baseweb="select"] > div { background:#2b2b33 !important; }
-.st-key-arsip_box [data-testid="stWidgetLabel"] p,
-.st-key-arsip_box [data-testid="stWidgetLabel"] label { color:#fff !important; }
-.st-key-arsip_box [data-testid="stForm"] { border:0 !important; padding:0; }
-.st-key-arsip_box input { background:#2b2b33 !important; color:#fff !important; }
-.st-key-arsip_box table.tbl td { background:#1a1a1f !important; color:#e8edf3; border-bottom:1px solid #2f3340; }
-.st-key-arsip_box table.tbl tr:nth-child(even) td { background:#22232a !important; }
+:is(.st-key-arsip_box, .st-key-pinjam_box) { background:#1a1a1f !important; border-radius:14px; padding:20px 22px; }
+:is(.st-key-arsip_box, .st-key-pinjam_box) [data-baseweb="tab-panel"] { background:transparent !important; padding-top:14px; }
+:is(.st-key-arsip_box, .st-key-pinjam_box) [data-testid="stMultiSelect"] div[data-baseweb="select"] > div { background:#2b2b33 !important; }
+:is(.st-key-arsip_box, .st-key-pinjam_box) [data-testid="stWidgetLabel"] p,
+:is(.st-key-arsip_box, .st-key-pinjam_box) [data-testid="stWidgetLabel"] label { color:#fff !important; }
+:is(.st-key-arsip_box, .st-key-pinjam_box) [data-testid="stForm"] { border:0 !important; padding:0; }
+:is(.st-key-arsip_box, .st-key-pinjam_box) input { background:#2b2b33 !important; color:#fff !important; }
+:is(.st-key-arsip_box, .st-key-pinjam_box) table.tbl td { background:#1a1a1f !important; color:#e8edf3; border-bottom:1px solid #2f3340; }
+:is(.st-key-arsip_box, .st-key-pinjam_box) table.tbl tr:nth-child(even) td { background:#22232a !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -259,42 +259,43 @@ elif menu == "📖 Katalog Buku":
 # ---------- PEMINJAMAN ----------
 elif menu == "🔄 Peminjaman":
     hero("Transaksi", "Peminjaman Buku", "Catat peminjaman, pantau riwayat, dan proses pengembalian buku")
-    t1, t2, t3 = st.tabs(["➕ Peminjaman Baru", "📋 Riwayat", "✅ Pengembalian"])
-    tersedia = read("SELECT id, judul FROM buku WHERE stok > 0")
-    with t1:
-        with st.form("form_pinjam", clear_on_submit=True):
-            x, y, z = st.columns(3)
-            nama = x.text_input("Nama Peminjam")
-            judul = y.selectbox("Judul Buku", tersedia["judul"])
-            batas = z.date_input("Batas Pengembalian", date.today() + timedelta(days=7))
-            if st.form_submit_button("Simpan Peminjaman"):
-                if nama.strip() and not tersedia.empty:
-                    bid = int(tersedia[tersedia["judul"] == judul]["id"].iloc[0])
-                    run("INSERT INTO peminjaman(peminjam,buku_id,tgl_pinjam,batas_kembali,status) VALUES(?,?,?,?,?)",
-                        (nama, bid, str(date.today()), str(batas), "Dipinjam"))
-                    run("UPDATE buku SET stok = stok - 1 WHERE id = ?", (bid,))
-                    st.success("Peminjaman tersimpan di database.")
+    with st.container(key="pinjam_box"):
+        t1, t2, t3 = st.tabs(["➕ Peminjaman Baru", "📋 Riwayat", "✅ Pengembalian"])
+        tersedia = read("SELECT id, judul FROM buku WHERE stok > 0")
+        with t1:
+            with st.form("form_pinjam", clear_on_submit=True):
+                x, y, z = st.columns(3)
+                nama = x.text_input("Nama Peminjam")
+                judul = y.selectbox("Judul Buku", tersedia["judul"])
+                batas = z.date_input("Batas Pengembalian", date.today() + timedelta(days=7))
+                if st.form_submit_button("Simpan Peminjaman"):
+                    if nama.strip() and not tersedia.empty:
+                        bid = int(tersedia[tersedia["judul"] == judul]["id"].iloc[0])
+                        run("INSERT INTO peminjaman(peminjam,buku_id,tgl_pinjam,batas_kembali,status) VALUES(?,?,?,?,?)",
+                            (nama, bid, str(date.today()), str(batas), "Dipinjam"))
+                        run("UPDATE buku SET stok = stok - 1 WHERE id = ?", (bid,))
+                        st.success("Peminjaman tersimpan di database.")
+                        st.rerun()
+                    else:
+                        st.warning("Nama peminjam wajib diisi.")
+        riwayat = read("""SELECT p.id, p.status AS raw, p.peminjam AS Peminjam, b.judul AS Buku, p.tgl_pinjam AS 'Tgl Pinjam',
+                          p.batas_kembali AS 'Batas Kembali',
+                          CASE WHEN p.status='Dipinjam' AND p.batas_kembali < date('now','localtime') THEN 'Terlambat' ELSE p.status END AS Status
+                          FROM peminjaman p JOIN buku b ON b.id = p.buku_id ORDER BY p.id DESC""")
+        with t2:
+            st.markdown(table(riwayat.drop(columns=["id", "raw"])), unsafe_allow_html=True)
+        with t3:
+            aktif = riwayat[riwayat["raw"] == "Dipinjam"]
+            if aktif.empty:
+                st.info("Tidak ada peminjaman aktif.")
+            else:
+                pilih = st.selectbox("Pilih peminjaman", aktif["id"],
+                                     format_func=lambda i: f"{aktif[aktif.id == i].Peminjam.iloc[0]} - {aktif[aktif.id == i].Buku.iloc[0]}")
+                if st.button("✅ Tandai Dikembalikan"):
+                    bid = int(read("SELECT buku_id FROM peminjaman WHERE id=?", (int(pilih),))["buku_id"][0])
+                    run("UPDATE peminjaman SET status='Dikembalikan' WHERE id=?", (int(pilih),))
+                    run("UPDATE buku SET stok = stok + 1 WHERE id=?", (bid,))
                     st.rerun()
-                else:
-                    st.warning("Nama peminjam wajib diisi.")
-    riwayat = read("""SELECT p.id, p.status AS raw, p.peminjam AS Peminjam, b.judul AS Buku, p.tgl_pinjam AS 'Tgl Pinjam',
-                      p.batas_kembali AS 'Batas Kembali',
-                      CASE WHEN p.status='Dipinjam' AND p.batas_kembali < date('now','localtime') THEN 'Terlambat' ELSE p.status END AS Status
-                      FROM peminjaman p JOIN buku b ON b.id = p.buku_id ORDER BY p.id DESC""")
-    with t2:
-        st.markdown(table(riwayat.drop(columns=["id", "raw"])), unsafe_allow_html=True)
-    with t3:
-        aktif = riwayat[riwayat["raw"] == "Dipinjam"]
-        if aktif.empty:
-            st.info("Tidak ada peminjaman aktif.")
-        else:
-            pilih = st.selectbox("Pilih peminjaman", aktif["id"],
-                                 format_func=lambda i: f"{aktif[aktif.id == i].Peminjam.iloc[0]} - {aktif[aktif.id == i].Buku.iloc[0]}")
-            if st.button("✅ Tandai Dikembalikan"):
-                bid = int(read("SELECT buku_id FROM peminjaman WHERE id=?", (int(pilih),))["buku_id"][0])
-                run("UPDATE peminjaman SET status='Dikembalikan' WHERE id=?", (int(pilih),))
-                run("UPDATE buku SET stok = stok + 1 WHERE id=?", (bid,))
-                st.rerun()
 
 # ---------- ARSIP ----------
 else:
