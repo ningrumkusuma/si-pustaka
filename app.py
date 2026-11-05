@@ -217,6 +217,27 @@ elif menu == "📖 Katalog Buku":
                     st.rerun()
                 else:
                     st.warning("Judul wajib diisi.")
+    with st.expander("🗑️ Hapus Buku"):
+        daftar = read("SELECT id, judul, penulis FROM buku ORDER BY judul")
+        if daftar.empty:
+            st.info("Belum ada buku di katalog.")
+        else:
+            pilih_buku = st.selectbox(
+                "Pilih buku yang akan dihapus", daftar["id"],
+                format_func=lambda i: f"{daftar[daftar.id == i].judul.iloc[0]} - {daftar[daftar.id == i].penulis.iloc[0]}")
+            yakin_buku = st.checkbox("Saya yakin ingin menghapus buku ini", key="yakin_hapus_buku")
+            if st.button("Hapus Buku"):
+                sedang_dipinjam = int(read("SELECT COUNT(*) AS n FROM peminjaman WHERE buku_id=? AND status='Dipinjam'",
+                                           (int(pilih_buku),))["n"][0])
+                if not yakin_buku:
+                    st.warning("Centang kotak konfirmasi terlebih dahulu.")
+                elif sedang_dipinjam > 0:
+                    st.error("Buku ini sedang dipinjam. Proses pengembaliannya dulu sebelum dihapus.")
+                else:
+                    run("DELETE FROM peminjaman WHERE buku_id=?", (int(pilih_buku),))
+                    run("DELETE FROM buku WHERE id=?", (int(pilih_buku),))
+                    st.toast("Buku berhasil dihapus.", icon="🗑️")
+                    st.rerun()
     f1, f2 = st.columns([2, 1])
     cari = f1.text_input("🔍 Cari judul atau penulis", placeholder="Ketik kata kunci...")
     buku = read("SELECT * FROM buku")
@@ -279,7 +300,7 @@ elif menu == "🔄 Peminjaman":
 else:
     hero("Kearsipan", "Arsip Digital", "Simpan dan kelola dokumen kearsipan secara digital")
     with st.container(key="arsip_box"):
-        t1, t2 = st.tabs(["➕ Tambah Arsip", "🗂️ Daftar Arsip"])
+        t1, t2, t3 = st.tabs(["➕ Tambah Arsip", "🗂️ Daftar Arsip", "🗑️ Hapus Arsip"])
         with t1:
             with st.form("form_arsip", clear_on_submit=True):
                 x, y = st.columns(2)
@@ -304,5 +325,26 @@ else:
             arsip = read("SELECT nama AS 'Nama Dokumen', jenis AS Jenis, tahun AS Tahun, status AS Status, file AS Berkas FROM arsip ORDER BY id DESC")
             pilihan = st.multiselect("Filter jenis arsip", sorted(arsip["Jenis"].unique()), default=sorted(arsip["Jenis"].unique()))
             st.markdown(table(arsip[arsip["Jenis"].isin(pilihan)]), unsafe_allow_html=True)
+        with t3:
+            semua = read("SELECT id, nama, jenis, tahun, file FROM arsip ORDER BY id DESC")
+            if semua.empty:
+                st.info("Belum ada arsip yang bisa dihapus.")
+            else:
+                pilih_arsip = st.selectbox(
+                    "Pilih arsip yang akan dihapus", semua["id"],
+                    format_func=lambda i: f"{semua[semua.id == i].nama.iloc[0]} ({semua[semua.id == i].jenis.iloc[0]}, {semua[semua.id == i].tahun.iloc[0]})")
+                yakin_arsip = st.checkbox("Saya yakin ingin menghapus arsip ini", key="yakin_hapus_arsip")
+                if st.button("Hapus Arsip"):
+                    if not yakin_arsip:
+                        st.warning("Centang kotak konfirmasi terlebih dahulu.")
+                    else:
+                        berkas_lama = semua[semua.id == pilih_arsip].file.iloc[0]
+                        run("DELETE FROM arsip WHERE id=?", (int(pilih_arsip),))
+                        folder = os.path.abspath("uploads") + os.sep
+                        if isinstance(berkas_lama, str) and berkas_lama and os.path.isfile(berkas_lama) \
+                                and os.path.abspath(berkas_lama).startswith(folder):
+                            os.remove(berkas_lama)
+                        st.toast("Arsip berhasil dihapus.", icon="🗑️")
+                        st.rerun()
 
 footer()
