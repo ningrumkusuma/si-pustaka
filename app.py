@@ -114,6 +114,10 @@ div.stButton > button, div[data-testid="stFormSubmitButton"] > button { border-r
 :is(.st-key-arsip_box, .st-key-pinjam_box) input { background:#2b2b33 !important; color:#fff !important; }
 :is(.st-key-arsip_box, .st-key-pinjam_box) table.tbl td { background:#1a1a1f !important; color:#e8edf3; border-bottom:1px solid #2f3340; }
 :is(.st-key-arsip_box, .st-key-pinjam_box) table.tbl tr:nth-child(even) td { background:#22232a !important; }
+/* Teks kotak centang di kotak hitam agar terbaca */
+:is(.st-key-arsip_box, .st-key-pinjam_box) [data-testid="stCheckbox"] p,
+:is(.st-key-arsip_box, .st-key-pinjam_box) [data-testid="stCheckbox"] label,
+.block-container [data-testid="stExpander"] [data-testid="stCheckbox"] p { color:#fff !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -260,7 +264,7 @@ elif menu == "📖 Katalog Buku":
 elif menu == "🔄 Peminjaman":
     hero("Transaksi", "Peminjaman Buku", "Catat peminjaman, pantau riwayat, dan proses pengembalian buku")
     with st.container(key="pinjam_box"):
-        t1, t2, t3 = st.tabs(["➕ Peminjaman Baru", "📋 Riwayat", "✅ Pengembalian"])
+        t1, t2, t3, t4 = st.tabs(["➕ Peminjaman Baru", "📋 Riwayat", "✅ Pengembalian", "🗑️ Hapus Riwayat"])
         tersedia = read("SELECT id, judul FROM buku WHERE stok > 0")
         with t1:
             with st.form("form_pinjam", clear_on_submit=True):
@@ -296,6 +300,33 @@ elif menu == "🔄 Peminjaman":
                     run("UPDATE peminjaman SET status='Dikembalikan' WHERE id=?", (int(pilih),))
                     run("UPDATE buku SET stok = stok + 1 WHERE id=?", (bid,))
                     st.rerun()
+        with t4:
+            selesai = riwayat[riwayat["raw"] == "Dikembalikan"]
+            if selesai.empty:
+                st.info("Belum ada riwayat yang sudah dikembalikan. Peminjaman yang masih aktif tidak bisa dihapus.")
+            else:
+                st.caption("Hanya riwayat yang sudah dikembalikan yang bisa dihapus, jadi stok buku tidak terpengaruh.")
+                pilih_riw = st.selectbox(
+                    "Pilih riwayat yang akan dihapus", selesai["id"],
+                    format_func=lambda i: f"{selesai[selesai.id == i].Peminjam.iloc[0]} - {selesai[selesai.id == i].Buku.iloc[0]} ({selesai[selesai.id == i]['Tgl Pinjam'].iloc[0]})")
+                yakin_riw = st.checkbox("Saya yakin ingin menghapus riwayat ini", key="yakin_hapus_riwayat")
+                if st.button("Hapus Riwayat"):
+                    if not yakin_riw:
+                        st.warning("Centang kotak konfirmasi terlebih dahulu.")
+                    else:
+                        run("DELETE FROM peminjaman WHERE id=? AND status='Dikembalikan'", (int(pilih_riw),))
+                        st.toast("Riwayat berhasil dihapus.", icon="🗑️")
+                        st.rerun()
+                st.markdown("---")
+                yakin_semua = st.checkbox(f"Saya yakin ingin menghapus SEMUA riwayat yang sudah dikembalikan ({len(selesai)} data)",
+                                          key="yakin_hapus_semua_riwayat")
+                if st.button("Hapus Semua yang Sudah Dikembalikan"):
+                    if not yakin_semua:
+                        st.warning("Centang kotak konfirmasi terlebih dahulu.")
+                    else:
+                        run("DELETE FROM peminjaman WHERE status='Dikembalikan'")
+                        st.toast("Semua riwayat yang sudah dikembalikan telah dihapus.", icon="🗑️")
+                        st.rerun()
 
 # ---------- ARSIP ----------
 else:
