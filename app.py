@@ -92,6 +92,24 @@ div.stButton > button, div[data-testid="stFormSubmitButton"] > button { border-r
 .stTabs [data-baseweb="tab-highlight"], .stTabs [data-baseweb="tab-border"] { display:none; }
 .foot { text-align:center; color:#8a94a6; font-size:12px; margin-top:34px; }
 </style>
+.stTabs [data-baseweb="tab-highlight"], .stTabs [data-baseweb="tab-border"] { display:none; }
+.foot { text-align:center; color:#8a94a6; font-size:12px; margin-top:34px; }
+
+/* Label form di area utama: warna biru tua agar terbaca di latar terang */
+.block-container [data-testid="stWidgetLabel"] p,
+.block-container [data-testid="stWidgetLabel"] label { color:#0f3d66 !important; font-weight:500; }
+
+/* Kotak "Tambah Buku Baru": seluruhnya hitam */
+.block-container [data-testid="stExpander"] details { background:#1a1a1f !important; border:0 !important; border-radius:14px; }
+.block-container [data-testid="stExpander"] summary,
+.block-container [data-testid="stExpander"] summary * { background:#1a1a1f; color:#fff !important; }
+.block-container [data-testid="stExpander"] [data-testid="stForm"] { border:0 !important; }
+.block-container [data-testid="stExpander"] [data-testid="stWidgetLabel"] p,
+.block-container [data-testid="stExpander"] [data-testid="stWidgetLabel"] label { color:#fff !important; }
+.block-container [data-testid="stExpander"] input { background:#2b2b33 !important; color:#fff !important; }
+</style>
+""", unsafe_allow_html=True)
+
 """, unsafe_allow_html=True)
 
 # ---------- HELPER ----------
