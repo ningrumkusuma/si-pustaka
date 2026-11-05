@@ -159,7 +159,7 @@ def footer():
 st.sidebar.markdown('<div class="brand"><div class="logo">📚</div><div><b>SI-PUSTAKA</b>'
                     '<small>Dinas Perpustakaan dan Kearsipan<br>Kabupaten Bangkalan</small></div></div>', unsafe_allow_html=True)
 menu = st.sidebar.radio("Menu", ["🏠 Dashboard", "📖 Katalog Buku", "🔄 Peminjaman", "🗄️ Arsip Digital"], label_visibility="collapsed")
-st.sidebar.markdown('<div class="side-card">📍 Jl. Durinan, Durinan, Bancaran, Bangkalan<br>🕗 Sistem Informasi Perpustakaan dan Arsip Digital</div>', unsafe_allow_html=True)
+st.sidebar.markdown('<div class="side-card">📍 Jl.Pertahanan nomer 109 2A, Bancaran, Bangkalan<br>🕗 Sistem Informasi Perpustakaan dan Arsip Digital</div>', unsafe_allow_html=True)
 
 # ---------- DASHBOARD ----------
 if menu == "🏠 Dashboard":
