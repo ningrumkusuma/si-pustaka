@@ -104,6 +104,14 @@ div.stButton > button, div[data-testid="stFormSubmitButton"] > button { border-r
 .block-container [data-testid="stExpander"] [data-testid="stWidgetLabel"] p,
 .block-container [data-testid="stExpander"] [data-testid="stWidgetLabel"] label { color:#fff !important; }
 .block-container [data-testid="stExpander"] input { background:#2b2b33 !important; color:#fff !important; }
+/* Tab Tambah Arsip dan Daftar Arsip: hitam penuh */
+.st-key-arsip_box [data-baseweb="tab-panel"] { background:#1a1a1f; border-radius:14px; padding:20px 22px; margin-top:10px; }
+.st-key-arsip_box [data-testid="stWidgetLabel"] p,
+.st-key-arsip_box [data-testid="stWidgetLabel"] label { color:#fff !important; }
+.st-key-arsip_box [data-testid="stForm"] { border:0 !important; padding:0; }
+.st-key-arsip_box input { background:#2b2b33 !important; color:#fff !important; }
+.st-key-arsip_box table.tbl td { background:#1a1a1f !important; color:#e8edf3; border-bottom:1px solid #2f3340; }
+.st-key-arsip_box table.tbl tr:nth-child(even) td { background:#22232a !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -268,30 +276,31 @@ elif menu == "🔄 Peminjaman":
 # ---------- ARSIP ----------
 else:
     hero("Kearsipan", "Arsip Digital", "Simpan dan kelola dokumen kearsipan secara digital")
-    t1, t2 = st.tabs(["➕ Tambah Arsip", "🗂️ Daftar Arsip"])
-    with t1:
-        with st.form("form_arsip", clear_on_submit=True):
-            x, y = st.columns(2)
-            nama = x.text_input("Nama Dokumen")
-            jenis = y.selectbox("Jenis", ["Surat", "Laporan", "Peta", "Notulen", "Foto", "Lainnya"])
-            tahun = x.number_input("Tahun", 1900, 2100, date.today().year)
-            status = y.selectbox("Status", ["Aktif", "Statis", "Inaktif"])
-            berkas = st.file_uploader("Unggah dokumen", type=["pdf", "jpg", "png", "docx"])
-            if st.form_submit_button("Simpan Arsip"):
-                if nama.strip():
-                    path = ""
-                    if berkas:
-                        path = os.path.join("uploads", os.path.basename(berkas.name))
-                        with open(path, "wb") as f:
-                            f.write(berkas.getbuffer())
-                    run("INSERT INTO arsip(nama,jenis,tahun,status,file) VALUES(?,?,?,?,?)", (nama, jenis, int(tahun), status, path))
-                    st.success("Arsip tersimpan di database.")
-                    st.rerun()
-                else:
-                    st.warning("Nama dokumen wajib diisi.")
-    with t2:
-        arsip = read("SELECT nama AS 'Nama Dokumen', jenis AS Jenis, tahun AS Tahun, status AS Status, file AS Berkas FROM arsip ORDER BY id DESC")
-        pilihan = st.multiselect("Filter jenis arsip", sorted(arsip["Jenis"].unique()), default=sorted(arsip["Jenis"].unique()))
-        st.markdown(table(arsip[arsip["Jenis"].isin(pilihan)]), unsafe_allow_html=True)
+    with st.container(key="arsip_box"):
+        t1, t2 = st.tabs(["➕ Tambah Arsip", "🗂️ Daftar Arsip"])
+        with t1:
+            with st.form("form_arsip", clear_on_submit=True):
+                x, y = st.columns(2)
+                nama = x.text_input("Nama Dokumen")
+                jenis = y.selectbox("Jenis", ["Surat", "Laporan", "Peta", "Notulen", "Foto", "Lainnya"])
+                tahun = x.number_input("Tahun", 1900, 2100, date.today().year)
+                status = y.selectbox("Status", ["Aktif", "Statis", "Inaktif"])
+                berkas = st.file_uploader("Unggah dokumen", type=["pdf", "jpg", "png", "docx"])
+                if st.form_submit_button("Simpan Arsip"):
+                    if nama.strip():
+                        path = ""
+                        if berkas:
+                            path = os.path.join("uploads", os.path.basename(berkas.name))
+                            with open(path, "wb") as f:
+                                f.write(berkas.getbuffer())
+                        run("INSERT INTO arsip(nama,jenis,tahun,status,file) VALUES(?,?,?,?,?)", (nama, jenis, int(tahun), status, path))
+                        st.success("Arsip tersimpan di database.")
+                        st.rerun()
+                    else:
+                        st.warning("Nama dokumen wajib diisi.")
+        with t2:
+            arsip = read("SELECT nama AS 'Nama Dokumen', jenis AS Jenis, tahun AS Tahun, status AS Status, file AS Berkas FROM arsip ORDER BY id DESC")
+            pilihan = st.multiselect("Filter jenis arsip", sorted(arsip["Jenis"].unique()), default=sorted(arsip["Jenis"].unique()))
+            st.markdown(table(arsip[arsip["Jenis"].isin(pilihan)]), unsafe_allow_html=True)
 
 footer()
